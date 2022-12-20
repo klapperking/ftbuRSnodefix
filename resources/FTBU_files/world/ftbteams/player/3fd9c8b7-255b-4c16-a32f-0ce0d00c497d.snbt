@@ -1,0 +1,19 @@
+{
+	id: "3fd9c8b7-255b-4c16-a32f-0ce0d00c497d"
+	type: "player"
+	player_name: "klapperlifestyle"
+	ranks: {
+		3fd9c8b7-255b-4c16-a32f-0ce0d00c497d: "owner"
+	}
+	properties: {
+		"ftbteams:display_name": "klapperlifestyle"
+		"ftbteams:color": "#59FF8D"
+		"ftbchunks:block_edit_mode": "allies"
+		"ftbchunks:block_interact_mode": "allies"
+		"ftbteams:description": ""
+		"ftbteams:free_to_join": 0b
+		"ftbchunks:allow_fake_players": 1b
+	}
+	message_history: [ ]
+	extra: { }
+}

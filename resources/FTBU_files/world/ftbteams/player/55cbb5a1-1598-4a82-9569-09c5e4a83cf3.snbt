@@ -1,0 +1,19 @@
+{
+	id: "55cbb5a1-1598-4a82-9569-09c5e4a83cf3"
+	type: "player"
+	player_name: "Zediious"
+	ranks: {
+		55cbb5a1-1598-4a82-9569-09c5e4a83cf3: "owner"
+	}
+	properties: {
+		"ftbteams:display_name": "Zediious"
+		"ftbteams:color": "#FFA759"
+		"ftbchunks:block_edit_mode": "allies"
+		"ftbchunks:block_interact_mode": "allies"
+		"ftbteams:description": ""
+		"ftbteams:free_to_join": 0b
+		"ftbchunks:allow_fake_players": 1b
+	}
+	message_history: [ ]
+	extra: { }
+}

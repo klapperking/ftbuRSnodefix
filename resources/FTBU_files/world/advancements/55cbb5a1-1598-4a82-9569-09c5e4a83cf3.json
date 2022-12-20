@@ -1,0 +1,60 @@
+{
+  "ftbic:recipes/ftbic/shaped/lv_solar_panel": {
+    "criteria": {
+      "has_item": "2022-12-20 02:15:22 -0500"
+    },
+    "done": true
+  },
+  "farmersdelight:main/root": {
+    "criteria": {
+      "seeds": "2022-06-29 21:51:56 -0400"
+    },
+    "done": true
+  },
+  "betterdungeons:root": {
+    "criteria": {
+      "always": "2022-06-29 21:51:56 -0400"
+    },
+    "done": true
+  },
+  "ftbic:recipes/ftbic/shaped/wind_mill": {
+    "criteria": {
+      "has_item": "2022-12-20 02:15:22 -0500"
+    },
+    "done": true
+  },
+  "create:root": {
+    "criteria": {
+      "0": "2022-06-29 21:51:56 -0400"
+    },
+    "done": true
+  },
+  "resourcefulbees:resourcefulbees/root": {
+    "criteria": {
+      "inventory_changed": "2022-06-29 21:51:56 -0400"
+    },
+    "done": true
+  },
+  "ftbic:recipes/ftbic/shaped/nuclear_reactor": {
+    "criteria": {
+      "has_item": "2022-12-20 02:15:22 -0500"
+    },
+    "done": true
+  },
+  "ftbic:recipes/ftbic/shaped/geothermal_generator": {
+    "criteria": {
+      "has_item": "2022-12-20 02:15:22 -0500"
+    },
+    "done": true
+  },
+  "minecraft:adventure/adventuring_time": {
+    "criteria": {
+      "minecraft:forest": "2022-06-29 21:53:41 -0400",
+      "minecraft:mountains": "2022-06-29 21:53:28 -0400",
+      "minecraft:river": "2022-06-29 21:52:35 -0400",
+      "minecraft:plains": "2022-06-29 21:51:56 -0400"
+    },
+    "done": false
+  },
+  "DataVersion": 2586
+}
