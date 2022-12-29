@@ -35,6 +35,7 @@ public class Main {
 
     public static int unpackZ(long p_218282_0_) {
         return (int)(p_218282_0_ << 64 - field_218292_j - NUM_Z_BITS >> 64 - NUM_Z_BITS);
+
     }
     public static long toLong() {
         return pack(x, y, z);
