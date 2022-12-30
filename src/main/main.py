@@ -5,16 +5,9 @@ import anvil
 import sys
 import argparse
 
-def nbt_to_json(nodes_file_loc: str = None) -> NBTTagBase:
-    if not nodes_file_loc:
-        nodes_file_loc = "../../resources/FTBU_files/world/data/refinedstorage_nodes.dat"
 
-    file = read_from_nbt_file(nodes_file_loc)
+def get_rs_nodes(nbt_file, node_type: str) -> list:
 
-    return file
-
-
-def get_rs_nodes(nbt_file, node_types: list) -> list:
     long_pos_list = []
     for node in nbt_file["data"]["Nodes"]:
         data = node["Data"]
@@ -22,12 +15,12 @@ def get_rs_nodes(nbt_file, node_types: list) -> list:
         id = node["Id"]
 
         # we only care about importer and exporter
-        if id not in node_types:
+        if id != node_type:
             continue
 
         # replace ' with " in the id string, so json.loads can read it
         pos_json = json.loads(str(position).replace("\'", "\""))
-        coordinates = darkere_coord_from_int.main(int(pos_json["value"]))
+        coordinates = darkere_coord_from_int.from_long(int(pos_json["value"]))
 
         long_pos_list.append(pos_json["value"])
 
@@ -63,14 +56,21 @@ def coordinates_to_region_naming(coordinate_range: list) -> list:
 
 def main(block_to_fix: str, coordinate_range: list):
 
-    blocks_to_check = []
+    nbt_file = read_from_nbt_file("../../resources/FTBU_files/world/data/refinedstorage_nodes.dat")
+    nbt_json = nbt_file.json_obj(full_json=True)
 
+    nodes = get_rs_nodes(nbt_file, node_type=block_to_fix)
+    blocks_to_check = [(darkere_coord_from_int.from_long(node)) for node in nodes]
+
+    """
+    blocks_to_check = []
     # TODO Replace with opening region file
     with open("pos_long_list.txt", "r") as f:
         nodes = [int(line) for line in f.readlines()]
     for node in nodes:
         x, y, z = darkere_coord_from_int.from_long(node)
         blocks_to_check.append((x, y, z))
+    """
 
     region_loc = "../../resources/FTBU_files/world/region/"
     region_naming_range = coordinates_to_region_naming(coordinate_range)
@@ -95,7 +95,8 @@ def main(block_to_fix: str, coordinate_range: list):
 
             # for each rs node, get the block
             for x, y, z in blocks_to_check:
-                #block not in range, we ignore # TODO not necessary, once we read the rs nbt based on coordinate-range only
+                # block not in range, we ignore
+                # TODO not necessary, once we read the rs nbt based on coordinate-range only
                 if (not x_range[0] < x < x_range[1]) or (not z_range[0] < z < z_range[1]):
                     continue
                 # if block in range get its chunk position and the compare with check-block
@@ -108,7 +109,8 @@ def main(block_to_fix: str, coordinate_range: list):
 
                     # if node entry doesn't match chunk block, node should be removed
                     if block_id != block_to_fix:
-                        print(f"Node at {x, y, z} is not {block_to_fix} but {block_id} - Remove the node")
+                        pos_long = darkere_coord_from_int.to_long(x, y, z)
+                        print(f"Node at {x, y, z}; {pos_long} is not {block_to_fix} but {block_id}")
 
                         to_fix.append((x, y, z))
     """

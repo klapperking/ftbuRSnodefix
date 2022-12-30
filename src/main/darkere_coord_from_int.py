@@ -39,6 +39,24 @@ def smallestEncompassingPowerOfTwo(value: int) -> int:
         i = i | i >> 16
         return i + 1
 
+def to_long(x: int, y: int, z: int) -> int:
+    """
+    :param x: x coordinate
+    :param y: y coordinate
+    :param z: z coordinate
+    :return: 64-bit integer
+    """
+    # Unclear why if done for x the results are wrong
+
+    # re-invert sign bits only for z
+    if (z & (1 << (NUM_Z_BITS - 1))) != 0:
+        z = z + (1 << NUM_Z_BITS)
+
+    after_x = x << NUM_Z_BITS + NUM_Y_BITS
+    after_z = after_x + (z << NUM_Y_BITS)
+    after_y = after_z + y
+    return after_y
+
 NUM_X_BITS = 1 + int(math.log2(smallestEncompassingPowerOfTwo(30000000))) #26
 NUM_Z_BITS = NUM_X_BITS #26
 NUM_Y_BITS = 64 - NUM_X_BITS - NUM_Z_BITS #12
@@ -53,3 +71,18 @@ INVERSE_START_BITS_Z = NUM_Y_BITS
 INVERSE_START_BITS_X = NUM_Y_BITS + NUM_Z_BITS
 
 x = y = z = 0
+
+"""
+testing
+with open("pos_long_list.txt", "r") as f:
+    node_longs = f.readlines()
+
+for i in node_longs:
+    long = int(i[:-1])
+
+    x, y, z = from_long(long)
+
+    test = to_long(x, y, z)
+
+    print(test, long)
+"""
