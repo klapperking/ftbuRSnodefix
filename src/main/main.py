@@ -10,13 +10,13 @@ from util.get_nodes import get_rs_nodes
 from util.get_region_files import coordinates_to_region_naming, get_region_names
 
 
-def main(block_to_fix: str, coordinate_range: list):
+def main(blocks_to_fix: list, coordinate_range: list):
     # 1. Open nbt-file using python-nbt
     nbt_file = read_from_nbt_file(DATA_PATH + "world/data/refinedstorage_nodes.dat")
     print("Read nbt-file")
 
     # 2. get all nodes from the nbt-file that interest us
-    nodes = get_rs_nodes(nbt_file, node_type=block_to_fix)
+    nodes = get_rs_nodes(nbt_file, node_types=blocks_to_fix)
 
     # 3. extract x,y,z coordinates for node-locations
     blocks_to_check = [(darkere.from_long(node)) for node in nodes]
@@ -65,7 +65,7 @@ def main(block_to_fix: str, coordinate_range: list):
                     block_id = chunk.get_block(block_x, y, block_z).name()
 
                     # if node entry doesn't match actual block, node should be removed
-                    if block_id != block_to_fix:
+                    if block_id not in blocks_to_fix:
                         pos_long = darkere.to_long(x, y, z)
                         fix_block_counter += 1
 
@@ -84,7 +84,7 @@ def main(block_to_fix: str, coordinate_range: list):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--fixblock', type=str, action="store")
+    parser.add_argument('-f', '--fixblock', type=str, nargs='+')
     parser.add_argument('-s', '--startcoordinates', type=int, nargs=2, action='append')
     parser.add_argument('-e', '--endcoordinates', type=int, nargs=2, action="append")
 

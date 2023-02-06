@@ -1,7 +1,7 @@
 import json
 
 
-def get_rs_nodes(nbt_file, node_type: str) -> list:
+def get_rs_nodes(nbt_file, node_types: list) -> list:
     """Get refined-storage nodes from nbt-file
     :param nbt_file: nbt-file object
     :param node_type: node-types (block-id) to check for, everything else is ignored
@@ -14,7 +14,7 @@ def get_rs_nodes(nbt_file, node_type: str) -> list:
         node_id = node["Id"]
 
         # we only care about importer and exporter
-        if node_id != node_type:
+        if node_id not in node_types:
             continue
 
         """ Implementation for cover-data not yet done
