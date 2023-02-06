@@ -1,140 +1,97 @@
-from python_nbt.nbt import read_from_nbt_file, NBTTagBase
-import json
-import darkere_coord_from_int
 import anvil
-import sys
 import argparse
+from python_nbt.nbt import read_from_nbt_file, write_to_nbt_file
+from os.path import join
 
+import util.darkere_coord_from_int as darkere
+from util.node_remover import remove_nodes
+from util.settings import DATA_PATH
+from util.get_nodes import get_rs_nodes
+from util.get_region_files import coordinates_to_region_naming, get_region_names
 
-def get_rs_nodes(nbt_file, node_type: str) -> list:
-
-    long_pos_list = []
-    for node in nbt_file["data"]["Nodes"]:
-        data = node["Data"]
-        position = node["Pos"]
-        id = node["Id"]
-
-        # we only care about importer and exporter
-        if id != node_type:
-            continue
-
-        # replace ' with " in the id string, so json.loads can read it
-        pos_json = json.loads(str(position).replace("\'", "\""))
-        coordinates = darkere_coord_from_int.from_long(int(pos_json["value"]))
-
-        long_pos_list.append(pos_json["value"])
-
-    return long_pos_list
-
-
-def save_long_pos_list(long_pos_list: list, file_path: str) -> None:
-    # save to file
-    with open("pos_long_list.txt", "w") as out:
-        for i in long_pos_list:
-            out.write(str(i) + "\n")
-    return None
-
-
-def coordinates_to_region_naming(coordinate_range: list) -> list:
-
-    region_naming_range = []
-    for i in coordinate_range:
-        new_coord_pair = []
-        for j in i:
-            if -512 < j < 512:
-                if j < 0:
-                    j = -1
-                elif j > 0:
-                    j = 1
-            else:
-                j = int(j / 16 / 32)
-
-            new_coord_pair.append(j)
-        region_naming_range.append(tuple(new_coord_pair))
-
-    return region_naming_range
 
 def main(block_to_fix: str, coordinate_range: list):
+    # 1. Open nbt-file using python-nbt
+    nbt_file = read_from_nbt_file(DATA_PATH + "world/data/refinedstorage_nodes.dat")
+    print("Read nbt-file")
 
-    nbt_file = read_from_nbt_file("../../resources/FTBU_files/world/data/refinedstorage_nodes.dat")
-    nbt_json = nbt_file.json_obj(full_json=True)
-
+    # 2. get all nodes from the nbt-file that interest us
     nodes = get_rs_nodes(nbt_file, node_type=block_to_fix)
-    blocks_to_check = [(darkere_coord_from_int.from_long(node)) for node in nodes]
 
-    """
-    blocks_to_check = []
-    # TODO Replace with opening region file
-    with open("pos_long_list.txt", "r") as f:
-        nodes = [int(line) for line in f.readlines()]
-    for node in nodes:
-        x, y, z = darkere_coord_from_int.from_long(node)
-        blocks_to_check.append((x, y, z))
-    """
+    # 3. extract x,y,z coordinates for node-locations
+    blocks_to_check = [(darkere.from_long(node)) for node in nodes]
+    print("Extracted block")
 
-    region_loc = "../../resources/FTBU_files/world/region/"
+    # 4. Get region-files to find specified coordinates in
+    # region path
+    region_loc = DATA_PATH + "world/region/"
+
+    # get all region-filenames that need to be opened
     region_naming_range = coordinates_to_region_naming(coordinate_range)
 
-    start_region_path = f"r.{region_naming_range[0][0]}.{region_naming_range[0][1]}.mca"
-    end_region_path = f"r.{region_naming_range[1][0]}.{region_naming_range[1][1]}.mca"
-
-    # TODO Multiple relevant regions!
-    if not start_region_path == end_region_path:
-        pass
+    region_name_numbers = get_region_names(region_naming_range)
 
     to_fix = []
+    total_node_fixes = 0
 
-    region = anvil.Region.from_file(region_loc + start_region_path)
-    # main loop for all chunks in the region
-    for i in range(0, 32):
-        for j in range(0, 32):
-            # get x and z range in the active chunk
-            x_range = (coordinate_range[0][0] + i * 16, coordinate_range[0][0] + (i + 1) * 16 - 1)
-            z_range = (coordinate_range[0][1] + j * 16, coordinate_range[0][1] + (j + 1) * 16 - 1)
-            chunk = anvil.Chunk.from_region(region, i, j)
+    for count, (region_x_piece, region_z_piece) in enumerate(region_name_numbers):
+        print(f"Searching region file {count} of {len(region_name_numbers)}")
+        fix_block_counter = 0
+        # construct region fiel path and read region file using anvil module
+        region_file_name = f"r.{region_x_piece}.{region_z_piece}.mca"
+        region = anvil.Region.from_file(region_loc + region_file_name)
 
-            # for each rs node, get the block
-            for x, y, z in blocks_to_check:
-                # block not in range, we ignore
-                # TODO not necessary, once we read the rs nbt based on coordinate-range only
-                if (not x_range[0] < x < x_range[1]) or (not z_range[0] < z < z_range[1]):
-                    continue
-                # if block in range get its chunk position and the compare with check-block
-                else:
-                    # get block position in active chunk
-                    block_x = x - x_range[0]
-                    block_z = z - z_range[0]
+        # iterate all chunk in region
+        for i in range(0, 32):
+            for j in range(0, 32):
+
+                chunk_x_range = (coordinate_range[0][0] + i * 16, coordinate_range[0][0] + (i + 1) * 16 - 1)
+                chunk_z_range = (coordinate_range[0][1] + j * 16, coordinate_range[0][1] + (j + 1) * 16 - 1)
+
+                # get chunk
+                chunk = anvil.Chunk.from_region(region, i, j)
+
+                # for each node-position, check block
+                for x, y, z in blocks_to_check:
+
+                    # if node not in this chunk, skip
+                    if (not chunk_x_range[0] <= x <= chunk_x_range[1]) or (not chunk_z_range[0] <= z <= chunk_z_range[1]):
+                        continue
+
+                    # get block info using anvil
+                    block_x = x - chunk_x_range[0]
+                    block_z = z - chunk_z_range[0]
 
                     block_id = chunk.get_block(block_x, y, block_z).name()
 
-                    # if node entry doesn't match chunk block, node should be removed
+                    # if node entry doesn't match actual block, node should be removed
                     if block_id != block_to_fix:
-                        pos_long = darkere_coord_from_int.to_long(x, y, z)
-                        print(f"Node at {x, y, z}; {pos_long} is not {block_to_fix} but {block_id}")
+                        pos_long = darkere.to_long(x, y, z)
+                        fix_block_counter += 1
 
-                        to_fix.append((x, y, z))
-    """
-    #save the block position to remove to a txt file
-    with open(str(block_to_fix) + ".txt", "a+") as f:
-    """
+                        # append long_psition to fix list
+                        to_fix.append(pos_long)
+
+        print(f"Found {fix_block_counter} Nodes to be removed in region")
+        total_node_fixes += fix_block_counter
+
+    print(f"Total nodes to remove: {total_node_fixes}")
+    # remove nodes from nbt_file and write nbt file
+    new_nbt_file = remove_nodes(nbt_file=nbt_file, pos_long_list=to_fix)
+    write_to_nbt_file(join(DATA_PATH, 'world/data/refinedstorage_nodes_NEW.dat'), new_nbt_file)
+    print("Done removing")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--fixblock', action="store")
+    parser.add_argument('-f', '--fixblock', type=str, action="store")
     parser.add_argument('-s', '--startcoordinates', type=int, nargs=2, action='append')
     parser.add_argument('-e', '--endcoordinates', type=int, nargs=2, action="append")
 
-    #parser.parse_args('-s x1 z2 -e x2 z2'.split())
-
-    # TODO Implement single chunk and specific chunk range implementation
-    #parser.add_argument('c', '--chunk', nargs=2, action="append")
-
-    block_to_fix = parser.parse_args().fixblock
+    fix_blocks = parser.parse_args().fixblock
 
     start_x_z = tuple(parser.parse_args().startcoordinates[0])
     end_x_z = tuple(parser.parse_args().endcoordinates[0])
     coordinate_range = [start_x_z, end_x_z]
 
-    #coordinate_range = [(5120, -512), (5616, -16)]
-
-    main(block_to_fix, coordinate_range)
+    main(fix_blocks, coordinate_range)
