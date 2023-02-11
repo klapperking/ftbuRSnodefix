@@ -1,5 +1,4 @@
 import anvil
-import argparse
 from python_nbt.nbt import read_from_nbt_file, write_to_nbt_file
 from os.path import join
 
@@ -10,17 +9,14 @@ from util.get_nodes import get_rs_nodes
 from util.get_region_files import coordinates_to_region_naming, get_region_names
 
 
-def main(blocks_to_fix: list, coordinate_range: list):
+def main(coordinate_range: list):
     # 1. Open nbt-file using python-nbt
     nbt_file = read_from_nbt_file(DATA_PATH + "world/data/refinedstorage_nodes.dat")
     print("Read nbt-file")
 
-    # 2. get all nodes from the nbt-file that interest us
-    nodes = get_rs_nodes(nbt_file, node_types=blocks_to_fix)
-
-    # 3. extract x,y,z coordinates for node-locations
-    blocks_to_check = [(darkere.from_long(node)) for node in nodes]
-    print("Extracted block")
+    #  get nodes dictionary that holds block_id: [(x,y,z),(x,y,z)]
+    nodes = get_rs_nodes(nbt_file, coord_range=coordinate_range)
+    print("Extracted node-coordinates")
 
     # 4. Get region-files to find specified coordinates in
     # region path
@@ -28,20 +24,22 @@ def main(blocks_to_fix: list, coordinate_range: list):
 
     # get all region-filenames that need to be opened
     region_naming_range = coordinates_to_region_naming(coordinate_range)
-
     region_name_numbers = get_region_names(region_naming_range)
 
     to_fix = []
     total_node_fixes = 0
 
     for count, (region_x_piece, region_z_piece) in enumerate(region_name_numbers):
-        print(f"Searching region file {count} of {len(region_name_numbers)}")
-        fix_block_counter = 0
-        # construct region fiel path and read region file using anvil module
-        region_file_name = f"r.{region_x_piece}.{region_z_piece}.mca"
-        region = anvil.Region.from_file(region_loc + region_file_name)
 
-        # iterate all chunk in region
+        # construct region file path
+        region_file_name = f"r.{region_x_piece}.{region_z_piece}.mca"
+        print(f"Searching region file {count} of {len(region_name_numbers)} - {region_file_name}")
+
+        # open region-file using anvil module
+        region = anvil.Region.from_file(region_loc + region_file_name)
+        fix_block_counter = 0
+
+        # iterate all chunks in region
         for i in range(0, 32):
             for j in range(0, 32):
 
@@ -52,25 +50,26 @@ def main(blocks_to_fix: list, coordinate_range: list):
                 chunk = anvil.Chunk.from_region(region, i, j)
 
                 # for each node-position, check block
-                for x, y, z in blocks_to_check:
+                for node_block_id, coordinate_list in nodes.items():
+                    for x, y, z in coordinate_list:
+                        # if node not in this chunk, skip
+                        if (not chunk_x_range[0] <= x <= chunk_x_range[1]) or (not chunk_z_range[0] <= z <= chunk_z_range[1]):
+                            continue
 
-                    # if node not in this chunk, skip
-                    if (not chunk_x_range[0] <= x <= chunk_x_range[1]) or (not chunk_z_range[0] <= z <= chunk_z_range[1]):
-                        continue
+                        block_x = x - chunk_x_range[0]
+                        block_z = z - chunk_z_range[0]
 
-                    # get block info using anvil
-                    block_x = x - chunk_x_range[0]
-                    block_z = z - chunk_z_range[0]
+                        # get block info using anvil
+                        block = chunk.get_block(block_x, y, block_z)
+                        block_id = block.name()
 
-                    block_id = chunk.get_block(block_x, y, block_z).name()
+                        # for every type of block we are looking at check
+                        if block_id != node_block_id:
+                            pos_long = darkere.to_long(x, y, z)
+                            to_fix.append(pos_long)
+                            fix_block_counter += 1
 
-                    # if node entry doesn't match actual block, node should be removed
-                    if block_id not in blocks_to_fix:
-                        pos_long = darkere.to_long(x, y, z)
-                        fix_block_counter += 1
-
-                        # append long_psition to fix list
-                        to_fix.append(pos_long)
+                            nodes[node_block_id].remove((x, y, z))
 
         print(f"Found {fix_block_counter} Nodes to be removed in region")
         total_node_fixes += fix_block_counter
@@ -83,15 +82,19 @@ def main(blocks_to_fix: list, coordinate_range: list):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--fixblock', type=str, nargs='+')
-    parser.add_argument('-s', '--startcoordinates', type=int, nargs=2, action='append')
-    parser.add_argument('-e', '--endcoordinates', type=int, nargs=2, action="append")
+    #parser = argparse.ArgumentParser()
+    #parser.add_argument('-f', '--fixblock', type=str, nargs='+')
+    #parser.add_argument('-s', '--startcoordinates', type=int, nargs=2, action='append')
+    #parser.add_argument('-e', '--endcoordinates', type=int, nargs=2, action="append")
 
-    fix_blocks = parser.parse_args().fixblock
+    #fix_blocks = parser.parse_args().fixblock
 
-    start_x_z = tuple(parser.parse_args().startcoordinates[0])
-    end_x_z = tuple(parser.parse_args().endcoordinates[0])
-    coordinate_range = [start_x_z, end_x_z]
+    #start_x_z = tuple(parser.parse_args().startcoordinates[0])
+    #end_x_z = tuple(parser.parse_args().endcoordinates[0])
+    #coordinate_range = [start_x_z, end_x_z]
 
-    main(fix_blocks, coordinate_range)
+    start_cords = 5450, 0, -460
+    end_cords = 5510, 256, -420
+    coordinate_range = [(start_cords[0], start_cords[2]), (end_cords[0], end_cords[2])]
+
+    main(coordinate_range)

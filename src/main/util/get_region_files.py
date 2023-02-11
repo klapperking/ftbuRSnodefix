@@ -1,6 +1,4 @@
 
-
-
 def coordinates_to_region_naming(coordinate_range: list) -> list:
     """
     Get region-file-name pieces to use for string-stitching
@@ -36,6 +34,12 @@ def get_region_names(region_naming_range: list) -> list:
     """
 
     start_region = region_naming_range[0]
+
+    # if only one region, return
+    if not len(region_naming_range) > 1:
+        region_file_name = start_region[0], start_region[1]
+        return [region_file_name]
+
     end_region = region_naming_range[1]
 
     # shortcoming - If the end borders of the coordinate range are exactly at chunk-change/region-change coordinates,

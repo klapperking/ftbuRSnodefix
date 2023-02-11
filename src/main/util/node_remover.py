@@ -1,15 +1,26 @@
 from os.path import join
 
+import python_nbt.nbt
 from python_nbt.nbt import write_to_nbt_file, read_from_nbt_file
 
 from . import settings
+from . import darkere_coord_from_int
 
 
 def remove_nodes(nbt_file, pos_long_list):
+
+    new_nodes = python_nbt.nbt.NBTTagList(tag_type=python_nbt.nbt.NBTTagCompound)
+
     for node in nbt_file["data"]["Nodes"]:
+
         if node["Pos"] in pos_long_list:
             print(f'Node located at {str(node["Pos"].value)} removed')
-            del node
+
+        else:
+            new_nodes.append(node)
+
+    # Overwrite Nodes with our node-list (excl. "removed" nodes)
+    nbt_file["data"]["Nodes"] = new_nodes
 
     return nbt_file
 
