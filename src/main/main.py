@@ -39,12 +39,14 @@ def main(coordinate_range: list):
         region = anvil.Region.from_file(region_loc + region_file_name)
         fix_block_counter = 0
 
+        region_start_x, region_start_z  = region_x_piece * 512, region_z_piece * 512
+
         # iterate all chunks in region
         for i in range(0, 32):
             for j in range(0, 32):
 
-                chunk_x_range = (coordinate_range[0][0] + i * 16, coordinate_range[0][0] + (i + 1) * 16 - 1)
-                chunk_z_range = (coordinate_range[0][1] + j * 16, coordinate_range[0][1] + (j + 1) * 16 - 1)
+                chunk_x_range = (region_start_x + i * 16, region_start_x + (i + 1) * 16 - 1)
+                chunk_z_range = (region_start_z + j * 16, region_start_z + (j + 1) * 16 - 1)
 
                 # get chunk
                 chunk = anvil.Chunk.from_region(region, i, j)
@@ -52,8 +54,11 @@ def main(coordinate_range: list):
                 # for each node-position, check block
                 for node_block_id, coordinate_list in nodes.items():
                     for x, y, z in coordinate_list:
+
                         # if node not in this chunk, skip
-                        if (not chunk_x_range[0] <= x <= chunk_x_range[1]) or (not chunk_z_range[0] <= z <= chunk_z_range[1]):
+                        if x < chunk_x_range[0]  or x > chunk_x_range[1]:
+                            continue
+                        if z < chunk_z_range[0] or z > chunk_z_range[1]:
                             continue
 
                         block_x = x - chunk_x_range[0]
@@ -65,8 +70,15 @@ def main(coordinate_range: list):
 
                         # for every type of block we are looking at check
                         if block_id != node_block_id:
+
+                            #for colour variation of e.g. crafters, we dont want to remove nodes
+                            if node_block_id[16:] in block_id:
+                                continue
+
                             pos_long = darkere.to_long(x, y, z)
                             to_fix.append(pos_long)
+
+                            print(f"Found node {node_block_id} at {x , y, z} ({pos_long})- But block is {block_id}")
                             fix_block_counter += 1
 
                             nodes[node_block_id].remove((x, y, z))
@@ -98,3 +110,5 @@ if __name__ == "__main__":
     coordinate_range = [(start_cords[0], start_cords[2]), (end_cords[0], end_cords[2])]
 
     main(coordinate_range)
+
+    # problem block!
