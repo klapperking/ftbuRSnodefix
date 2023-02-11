@@ -1,4 +1,5 @@
 import anvil
+import argparse
 from python_nbt.nbt import read_from_nbt_file, write_to_nbt_file
 from os.path import join
 
@@ -81,8 +82,6 @@ def main(coordinate_range: list):
                             print(f"Found node {node_block_id} at {x , y, z} ({pos_long})- But block is {block_id}")
                             fix_block_counter += 1
 
-                            nodes[node_block_id].remove((x, y, z))
-
         print(f"Found {fix_block_counter} Nodes to be removed in region")
         total_node_fixes += fix_block_counter
 
@@ -94,21 +93,17 @@ def main(coordinate_range: list):
 
 
 if __name__ == "__main__":
-    #parser = argparse.ArgumentParser()
-    #parser.add_argument('-f', '--fixblock', type=str, nargs='+')
-    #parser.add_argument('-s', '--startcoordinates', type=int, nargs=2, action='append')
-    #parser.add_argument('-e', '--endcoordinates', type=int, nargs=2, action="append")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--startcoordinates', type=int, nargs=2, action='append')
+    parser.add_argument('-e', '--endcoordinates', type=int, nargs=2, action="append")
 
-    #fix_blocks = parser.parse_args().fixblock
+    start_x_z = tuple(parser.parse_args().startcoordinates[0])
+    end_x_z = tuple(parser.parse_args().endcoordinates[0])
+    coordinate_range = [start_x_z, end_x_z]
 
-    #start_x_z = tuple(parser.parse_args().startcoordinates[0])
-    #end_x_z = tuple(parser.parse_args().endcoordinates[0])
-    #coordinate_range = [start_x_z, end_x_z]
-
+    """
     start_cords = 5450, 0, -460
     end_cords = 5510, 256, -420
     coordinate_range = [(start_cords[0], start_cords[2]), (end_cords[0], end_cords[2])]
-
+    """
     main(coordinate_range)
-
-    # problem block!
