@@ -57,6 +57,8 @@ def to_long(x: int, y: int, z: int) -> int:
     after_y = after_z + y
     return after_y
 
+# copied 'constants' - TODO: Refactor these to make more sense
+
 NUM_X_BITS = 1 + int(math.log2(smallestEncompassingPowerOfTwo(30000000))) #26
 NUM_Z_BITS = NUM_X_BITS #26
 NUM_Y_BITS = 64 - NUM_X_BITS - NUM_Z_BITS #12
@@ -71,18 +73,3 @@ INVERSE_START_BITS_Z = NUM_Y_BITS
 INVERSE_START_BITS_X = NUM_Y_BITS + NUM_Z_BITS
 
 x = y = z = 0
-
-"""
-testing
-with open("pos_long_list.txt", "r") as f:
-    node_longs = f.readlines()
-
-for i in node_longs:
-    long = int(i[:-1])
-
-    x, y, z = from_long(long)
-
-    test = to_long(x, y, z)
-
-    print(test, long)
-"""

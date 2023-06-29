@@ -128,6 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Local files
-*.dat
-*.mca
+# ignore local region and node files
+resources/working_data/world/region/*.mca
+resources/working_data/world/data/*.dat
