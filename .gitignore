@@ -1,0 +1,8 @@
+# ignore local region and node files
+resources/working_data/world/region/*.mca
+resources/working_data/world/data/*.dat
+
+# ignore pycache etc
+.idea/
+src/main/__pycache__/
+src/main/util/__pycache__/
